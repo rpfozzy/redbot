@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление GitHub Actions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .action-item {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Управление GitHub Actions</h1>
+    <button onclick="checkAPI()">Проверить работоспособность API</button>
+    <button onclick="getRunningActions()">Проверить запущенные действия</button>
+    <div id="actions-list"></div>
+    <button onclick="updateBotFile()">Обновить файл bot.py</button>
+
+    <script>
+        // URL вашего серверного прокси
+        const proxyUrl = 'https://your-proxy-server.example.com';
+
+        async function checkAPI() {
+            try {
+                const response = await fetch(`${proxyUrl}/check-api`);
+                if (response.ok) {
+                    alert('API работает корректно!');
+                } else {
+                    alert('Ошибка подключения к API.');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка подключения к API.');
+            }
+        }
+
+        async function getRunningActions() {
+            try {
+                const response = await fetch(`${proxyUrl}/get-running-actions`);
+                const data = await response.json();
+                const actionsList = document.getElementById('actions-list');
+                actionsList.innerHTML = '';
+
+                if (data.workflow_runs && data.workflow_runs.length > 0) {
+                    data.workflow_runs.forEach(run => {
+                        if (run.status === 'in_progress') {
+                            const div = document.createElement('div');
+                            div.className = 'action-item';
+                            div.innerHTML = `
+                                <p><strong>ID:</strong> ${run.id}</p>
+                                <p><strong>Name:</strong> ${run.name}</p>
+                                <p><strong>Status:</strong> ${run.status}</p>
+                                <button onclick="cancelRun(${run.id})">Отменить действие</button>
+                            `;
+                            actionsList.appendChild(div);
+                        }
+                    });
+                } else {
+                    actionsList.innerHTML = '<p>Нет запущенных действий.</p>';
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Не удалось получить список запущенных действий.');
+            }
+        }
+
+        async function cancelRun(runId) {
+            try {
+                const response = await fetch(`${proxyUrl}/cancel-run/${runId}`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    alert('Запущенное действие отменено.');
+                    getRunningActions();
+                } else {
+                    alert('Не удалось отменить действие.');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при отмене действия.');
+            }
+        }
+
+        async function updateBotFile() {
+            const newContent = prompt("Введите новый код для bot.py:");
+
+            if (!newContent) {
+                alert("Обновление отменено.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${proxyUrl}/update-bot-file`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ newContent })
+                });
+
+                if (response.ok) {
+                    alert('Файл bot.py успешно обновлен.');
+                } else {
+                    alert('Ошибка обновления файла.');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при обновлении файла.');
+            }
+        }
+    </script>
+</body>
+</html>
