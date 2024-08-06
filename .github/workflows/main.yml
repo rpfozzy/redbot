@@ -1,0 +1,21 @@
+name: Example Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use GitHub Token
+        env:
+          TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          echo "Using token: $TOKEN"
+          # Ваши команды, использующие токен
